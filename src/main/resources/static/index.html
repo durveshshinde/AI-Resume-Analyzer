@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Resume Analyzer</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+	background: #020617;
+	color: white;
+	overflow-x: hidden;
+}
+
+
+body::before {
+	content: "";
+	position: fixed;
+	width: 200%;
+	height: 200%;
+	background: radial-gradient(circle, #0ea5e9 0%, transparent 40%),
+		radial-gradient(circle, #6366f1 0%, transparent 40%);
+	animation: moveBg 10s linear infinite;
+	z-index: -1;
+}
+
+@keyframes moveBg { 0%{
+	transform: translate(0, 0);
+}
+
+50%
+{
+transform
+:
+translate(
+-25%
+,
+-25%
+);
+}
+100%
+{
+transform
+:
+translate(
+0
+,
+0
+);
+}
+}
+
+
+.nav {
+	display: flex;
+	justify-content: space-between;
+	padding: 20px 40px;
+	backdrop-filter: blur(10px);
+}
+
+.logo {
+	font-size: 20px;
+	font-weight: bold;
+	background: linear-gradient(45deg, #38bdf8, #6366f1);
+	-webkit-background-clip: text;
+	color: transparent;
+}
+
+
+.hero {
+	height: 90vh;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+}
+
+.hero h1 {
+	font-size: 3.5rem;
+}
+
+.hero span {
+	color: #38bdf8;
+}
+
+.hero p {
+	margin-top: 10px;
+	color: #94a3b8;
+}
+
+
+.upload {
+	margin-top: 30px;
+	padding: 30px;
+	border-radius: 20px;
+	background: rgba(255, 255, 255, 0.05);
+	backdrop-filter: blur(20px);
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+	transition: 0.3s;
+}
+
+.upload:hover {
+	transform: scale(1.05);
+}
+
+
+.btn {
+	margin-top: 15px;
+	padding: 12px 25px;
+	border: none;
+	border-radius: 30px;
+	background: linear-gradient(45deg, #38bdf8, #6366f1);
+	color: white;
+	cursor: pointer;
+	transition: 0.3s;
+}
+
+.btn:hover {
+	box-shadow: 0 0 30px #38bdf8;
+}
+
+
+.dashboard {
+	display: none;
+	padding: 40px;
+}
+
+
+.grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 20px;
+}
+
+
+.card {
+	padding: 20px;
+	border-radius: 20px;
+	background: rgba(255, 255, 255, 0.05);
+	backdrop-filter: blur(20px);
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+	transition: 0.3s;
+}
+
+.card:hover {
+	transform: translateY(-10px);
+}
+
+/* SKILLS */
+.skills span {
+	background: linear-gradient(45deg, #38bdf8, #6366f1);
+	padding: 6px 12px;
+	margin: 5px;
+	border-radius: 10px;
+	display: inline-block;
+}
+
+/* SCORE TEXT */
+.scoreText {
+	font-size: 28px;
+	text-align: center;
+	margin-top: 10px;
+}
+
+/* LOADER */
+.loader {
+	display: none;
+	margin: auto;
+	border: 6px solid #1e293b;
+	border-top: 6px solid #38bdf8;
+	width: 50px;
+	height: 50px;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin { 100%{
+	transform: rotate(360deg);
+}
+
+}
+
+/* AI INSIGHT */
+.ai {
+	margin-top: 20px;
+	padding: 20px;
+	border-radius: 15px;
+	background: rgba(56, 189, 248, 0.1);
+	font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+
+	<div class="nav">
+		<div class="logo">🚀 ResumeAI</div>
+	</div>
+
+	<!-- HERO -->
+	<div class="hero" id="hero">
+		<h1>
+			Analyze Your Resume with <span>AI</span>
+		</h1>
+		<p>Get ATS score, skills & improvements instantly</p>
+
+		<div class="upload">
+			<form id="form">
+				<input type="file" id="file" required> <br>
+				<select id="role" required>
+				
+    <option value="">Select Job Role</option>
+    <option>Java Developer</option>
+    <option>Full Stack Developer</option>
+    <option>Data Analyst</option>
+</select>
+				<button class="btn">Analyze Now</button>
+			</form>
+			<div class="loader" id="loader"></div>
+		</div>
+	</div>
+
+	<!-- DASHBOARD -->
+	<div class="dashboard" id="dashboard">
+
+		<div class="grid">
+
+			<div class="card">
+				<h3>📈Score</h3>
+				<canvas id="scoreChart"></canvas>
+				<div class="scoreText" id="scoreText"></div>
+			</div>
+
+			<div class="card">
+				<h3>🧠Skills</h3>
+				<div id="skills" class="skills"></div>
+			</div>
+
+			<div class="card">
+				<h3>📊Skill Analysis</h3>
+				<canvas id="barChart"></canvas>
+			</div>
+
+		</div>
+
+		<div class="grid" style="margin-top: 20px;">
+			<div class="card">
+				<h3>💡Suggestions</h3>
+				<ul id="suggestions"></ul>
+			</div>
+
+			<div class="card">
+				<h3>🤖AI Insight</h3>
+				<div id="ai" class="ai"></div>
+			</div>
+			
+			<!--  ADD THIS ATS CARD -->
+    <div class="card">
+        <h3>🔍 ATS Analysis</h3>
+        <p id="atsScore"></p>
+        <p id="atsMissing"></p>
+    </div>
+    
+    <div class="card">
+    <h3>📄 Resume Sections</h3>
+    <p id="sections"></p>
+</div>
+
+<div class="card">
+    <h3>🎯 Career Roadmap</h3>
+    <p id="roadmap"></p>
+</div>
+
+		</div>
+
+	</div>
+
+	<script>
+let barChart, scoreChart;
+
+document.getElementById("form").addEventListener("submit",function(e){
+    e.preventDefault();
+    
+    document.getElementById("hero").style.display = "none";
+
+    document.getElementById("loader").style.display="block";
+    
+    window.scrollTo(0, 0);
+
+    const file=document.getElementById("file").files[0];
+    const fd=new FormData();
+    fd.append("file",file);
+    const role = document.getElementById("role").value;
+    fd.append("role", role);
+
+    fetch("http://localhost:8080/resume/upload",{method:"POST",body:fd})
+    .then(res=>res.text())
+   .then(data => {
+
+	   document.getElementById("hero").style.display = "none";
+	    document.getElementById("dashboard").style.display = "block";
+	    document.getElementById("dashboard").style.animation = "fade 0.5s ease";
+	    window.scrollTo(0, 0);
+
+    //  Extract values
+    const skillsMatch = data.match(/Skills: \[(.*?)\]/);
+    const scoreMatch = data.match(/Score: (\d+)/);
+    const suggestionsMatch = data.match(/Suggestions: \[(.*?)\]/);
+    const atsScoreMatch = data.match(/ATS Score: (\d+)%/);
+    const atsMissingMatch = data.match(/Missing Keywords: \[(.*?)\]/);
+
+    const skills = skillsMatch ? skillsMatch[1].split(",") : [];
+    const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+    const suggestions = suggestionsMatch ? suggestionsMatch[1].split(",") : [];
+    const atsScore = atsScoreMatch ? atsScoreMatch[1] : 0;
+    const atsMissing = atsMissingMatch ? atsMissingMatch[1] : "";
+    
+    const sectionMatch = data.match(/Resume Sections:\n([\s\S]*?)\n\n/);
+    const sectionText = sectionMatch ? sectionMatch[1] : "";
+    document.getElementById("sections").innerText = sectionText;
+    
+  
+    
+    const roadmapMatch = data.match(/Career Roadmap[\s\S]*/);
+    const roadmapText = roadmapMatch ? roadmapMatch[0] : "";
+
+    document.getElementById("roadmap").innerText = roadmapText;
+    
+    
+
+    // Skills
+    const sdiv = document.getElementById("skills");
+    sdiv.innerHTML = "";
+    skills.forEach(s => {
+        let span = document.createElement("span");
+        span.innerText = s.trim();
+        sdiv.appendChild(span);
+    });
+
+    //  Suggestions
+    const sug = document.getElementById("suggestions");
+    sug.innerHTML = "";
+    suggestions.forEach(s => {
+        let li = document.createElement("li");
+        li.innerText = s.trim();
+        sug.appendChild(li);
+    });
+
+    //  Score chart
+    if(scoreChart) scoreChart.destroy();
+    scoreChart = new Chart(document.getElementById("scoreChart"), {
+        type: "doughnut",
+        data: { datasets: [{ data: [score, 100 - score] }] }
+    });
+
+    document.getElementById("scoreText").innerText = score + " / 100";
+
+    // Bar chart
+    if(barChart) barChart.destroy();
+    barChart = new Chart(document.getElementById("barChart"), {
+        type: "bar",
+        data: {
+            labels: skills,
+            datasets: [{ data: skills.map(() => Math.random() * 100) }]
+        }
+    });
+
+    //  ATS display
+    document.getElementById("atsScore").innerText = "ATS Score: " + atsScore + "%";
+    document.getElementById("atsMissing").innerText = "Missing: " + atsMissing;
+
+    // AI Insight
+    let insight = "";
+
+    if(score >= 80){
+        insight = "🔥 Excellent profile! You are ready for top product-based companies.";
+    }
+    else if(score >= 60){
+        insight = "👍 Good profile, but improving advanced skills will boost your chances.";
+    }
+    else if(score >= 40){
+        insight = "⚠️ Your resume needs improvement. Focus on core skills and projects.";
+    }
+    else{
+        insight = "❌ Weak profile. Start building projects and learn in-demand technologies.";
+    }
+
+    document.getElementById("ai").innerText = insight;
+
+    });
+});
+</script>
+
+</body>
+</html>
